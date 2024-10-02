@@ -1,0 +1,141 @@
+<!-- import untitled-1.js -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Untitled-1</title>
+  <script>
+    // there is 3 csv files
+    // Question.csv, Answer.csv, Result.csv
+    // Question.csv has 3 columns, id, question, type
+    // Answer.csv has 4 columns, id, question_id, answer, next_question_id
+    // Result.csv has 2 columns, id, result
+
+    // Question.csv
+    // type is M or D which means Multiple choice or Dropdown
+    //id, question, type
+    //1,A or B,M
+    //2,C or D,D
+    //3,E or F,M
+
+    // Answer.csv
+    //id, answer, question_id, next_question_id
+    //1,A,1,2
+    //2,B,1,2
+    //3,C,2,-1
+    //4,D,2,-2
+
+    // Result.csv
+    // result is the final result with negative id, it means the end of the question
+    //id, result
+    //-1,Result 1
+    //-2,Result 2
+
+    // A function to generate html
+    // if the question type is M, it will generate answer as radio button
+    // if the question type is D, it will generate ans as dropdown
+    // if the next_question_id is negative, it will generate the result
+
+    const questionCsv = `id, question, type
+1,A or B,M
+2,C or D,D
+3,E or F,M
+4,G or H,M`;
+
+    const answerCsv = `id, answer, question_id, next_question_id
+1,A,1,2
+2,B,1,4
+3,C,2,-1
+4,D,2,-2
+5,G,4,-3
+6,H,4,-4`;
+
+    const resultCsv = `id, result
+-1,Result 1
+-2,Result 2
+-3,Result 3
+-4,Result 4`;
+
+    // convert csv to array
+    // this first line is header
+    const questions = questionCsv.split('\n').slice(1).map(row => row.split(','));
+    const answers = answerCsv.split('\n').slice(1).map(row => row.split(','));
+    const results = resultCsv.split('\n').slice(1).map(row => row.split(','));
+
+
+    // function to generate html
+    // function will input a question id and generate html
+    function generateHtml(qid) {
+
+
+      let html = '';
+
+      // if the qid is not provided, display the question with smallest id
+      if (!qid) {
+        qid = questions[0][0];
+      }
+      
+      // get the question
+      const question = questions.find(question => question[0] === qid);
+      html += `<h1>${question[1]}</h1>`;
+      const questionId = question[0];
+
+      // display the answer
+      const answer = answers.filter(answer => answer[2] === questionId);
+      if (question[2] === 'M') {
+        answer.forEach(ans => {
+          html += `<input type="radio" name="answer" value="${ans[0]}">${ans[1]}<br>`;
+        });
+      } else {
+        html += `<select>`;
+        answer.forEach(ans => {
+          html += `<option value="${ans[0]}">${ans[1]}</option>`;
+        });
+        html += `</select>`;
+      }
+
+      // generate a button to submit the answer
+      html += `<button onclick="submitAnswer()">Submit</button>`;
+
+      return html;
+    }
+
+    function generateResult(resultId) {
+      // get the result
+      const result = results.find(res => res[0] === resultId);
+      document.querySelector('#app').innerHTML = `<h1>${result[1]}</h1>`;
+    }
+
+    // function to submit the answer
+    function submitAnswer() {
+      // get the selected answer which is the value of the radio button or dropdown
+      const selectedAnswer = document.querySelector('input[name="answer"]:checked') ? document.querySelector('input[name="answer"]:checked').value : document.querySelector('select').value;
+      // get the next question id
+      const nextQuestionId = answers.find(ans => ans[0] === selectedAnswer)[3];
+
+      // if the next question id is negative, display the result
+      // else display the next question and render html again with the next question
+      if (nextQuestionId < 0) {
+        const result = results.find(res => res[0] === nextQuestionId)[1];
+        // call generateResult function
+        generateResult(nextQuestionId);
+      } else {
+        document.querySelector('#app').innerHTML = generateHtml(nextQuestionId);
+      }
+    }
+
+
+  </script>
+</head>
+
+<body>
+  <div id="app">
+  </div>
+
+</html>
+<script>
+  const app = document.querySelector('#app');
+  // run the function in the imported file
+  app.innerHTML = generateHtml();
+</script>
